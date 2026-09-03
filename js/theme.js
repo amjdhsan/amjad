@@ -1,22 +1,13 @@
-// theme switcher
-const themeToggle = document.querySelector(".theme-toggle");
-const htmlElement = document.documentElement;
-const themeIcon = themeToggle.querySelector("i");
+// theme switcher — the pre-paint script in <head> has already applied the
+// stored (or system) theme, so this only keeps the icon in sync and wires
+// up the toggle.
+const themeToggleButton = document.querySelector(".theme-toggle");
+const themeToggleIconReference = themeToggleButton.querySelector("use");
+const prefersDarkColorScheme = window.matchMedia("(prefers-color-scheme: dark)");
 
-// check for system preference
-const prefersDarkScheme = window.matchMedia("(prefers-color-scheme: dark)");
+updateThemeIcon(document.documentElement.getAttribute("data-theme"));
 
-// check for saved theme preference or use system preference
-const savedTheme =
-  localStorage.getItem("theme") ||
-  (prefersDarkScheme.matches ? "dark" : "light");
-
-// apply theme immediately when page loads
-document.documentElement.setAttribute("data-theme", savedTheme);
-updateThemeIcon(savedTheme);
-
-// listen for theme toggle clicks
-themeToggle.addEventListener("click", () => {
+themeToggleButton.addEventListener("click", () => {
   const currentTheme = document.documentElement.getAttribute("data-theme");
   const newTheme = currentTheme === "light" ? "dark" : "light";
 
@@ -25,15 +16,19 @@ themeToggle.addEventListener("click", () => {
   updateThemeIcon(newTheme);
 });
 
-// listen for system theme changes
-prefersDarkScheme.addEventListener("change", (e) => {
-  if (!localStorage.getItem("theme")) {
-    const newTheme = e.matches ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", newTheme);
-    updateThemeIcon(newTheme);
-  }
+// follow the system theme until an explicit choice has been stored
+prefersDarkColorScheme.addEventListener("change", (colorSchemeChangeEvent) => {
+  if (localStorage.getItem("theme")) return;
+
+  const systemTheme = colorSchemeChangeEvent.matches ? "dark" : "light";
+  document.documentElement.setAttribute("data-theme", systemTheme);
+  updateThemeIcon(systemTheme);
 });
 
+// the moon offers dark mode; the sun offers the way back
 function updateThemeIcon(theme) {
-  themeIcon.className = theme === "light" ? "fas fa-moon" : "fas fa-sun";
+  themeToggleIconReference.setAttribute(
+    "href",
+    theme === "light" ? "#icon-moon" : "#icon-sun",
+  );
 }
